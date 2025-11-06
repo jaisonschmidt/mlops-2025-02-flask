@@ -45,5 +45,38 @@ def get_metrics():
     """Retorna as métricas do modelo treinado"""
     return jsonify(metrics)
 
+@app.route('/predict', methods=['GET'])
+def predict():
+    try:
+        size_param = request.args.get("size")
+        bedrooms_param = request.args.get("bedrooms")
+
+        # Conversão de tipos com validação
+        try:
+            size = float(size_param)
+        except ValueError:
+            return jsonify({"erro": "O parâmetro 'size' deve ser um número."}), 400
+
+        try:
+            # permite que o usuário passe '2' ou '2.0'
+            bedrooms = int(float(bedrooms_param))
+        except ValueError:
+            return jsonify({"erro": "O parâmetro 'bedrooms' deve ser um inteiro."}), 400
+
+
+        # Faz a predição
+        entrada = [[float(size), int(bedrooms)]]
+        preco_previsto = model.predict(entrada)[0]
+
+        return jsonify({
+            "size": size,
+            "bedrooms": bedrooms,
+            "preco_previsto": round(float(preco_previsto), 2),
+            "r2": metrics.get("r2")
+        })
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
